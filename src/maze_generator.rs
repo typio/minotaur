@@ -118,7 +118,11 @@ impl MazeGenerator for DFS {
                 // breaks single layer wall
                 for d in DIRS {
                     // if behind skip check
-                    if dir.get_xy().0 == d.0 * -1 || dir.get_xy().1 == d.1 * -1 {
+                    if (dir.get_xy().0 == 1 && d.0 == -1)
+                        || (dir.get_xy().0 == -1 && d.0 == 1)
+                        || (dir.get_xy().1 == 1 && d.1 == -1)
+                        || (dir.get_xy().1 == -1 && d.1 == 1)
+                    {
                         continue;
                     } else if (new_square.x == 0 && d.0 == -1)
                         || (new_square.x == maze.size.x - 1 && d.0 == 1)
