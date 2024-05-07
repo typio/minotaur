@@ -1,14 +1,16 @@
-use crate::{CellType, Coord, Dir, DIRS};
+use crate::{Cell, Coord, Dir};
 use rand::{thread_rng, Rng};
 
 pub trait MazeGenerator {
-    fn new(maze_size: Coord) -> Self;
+    fn new(maze: &Maze) -> Self;
     fn step(&mut self, maze: &mut Maze, speed: usize);
 }
 
 pub struct Maze {
     pub size: Coord,
-    pub map: Vec<CellType>,
+    pub map: Vec<Cell>,
+    pub visited: Vec<bool>,
+    pub walker: Coord,
     pub start: Coord,
     pub end: Coord,
 
@@ -16,137 +18,99 @@ pub struct Maze {
 }
 
 pub struct DFS {
-    pub walker: Coord,
     pub depth: usize,
     pub max_depth: usize,
+    pub stack: Vec<Coord>,
 }
 
 impl MazeGenerator for DFS {
-    fn new(maze_size: Coord) -> Self {
+    fn new(maze: &Maze) -> Self {
         DFS {
-            walker: Coord {
-                x: 0,
-                y: maze_size.y / 2,
-            },
-            depth: 0,
+            depth: 1,
             max_depth: 1,
+            stack: vec![maze.start],
         }
     }
 
     fn step(&mut self, maze: &mut Maze, speed: usize) {
         for _ in 1..=speed {
-            let last_walker = self.walker;
-
-            if self.depth > self.max_depth {
-                maze.end = self.walker;
-                self.max_depth = self.depth;
+            if self.stack.len() == 0 {
+                break;
             }
-            maze.map[self.walker.flatten(maze.size)] = CellType::Tunnel;
+            let current_cell = self.stack.pop().expect("Stack can't be empty");
+            self.depth -= 1;
+            maze.walker = current_cell;
 
             let mut dirs = vec![Dir::Up, Dir::Down, Dir::Left, Dir::Right];
-            'walk: loop {
-                // nowhere to go so backtrack
+            loop {
                 if dirs.len() == 0 {
-                    let mut dirs_2 = vec![Dir::Up, Dir::Down, Dir::Left, Dir::Right];
-                    while dirs_2.len() > 0 {
-                        let dir_2 = dirs_2.swap_remove(0);
-                        if !self.walker.is_valid(maze.size, dir_2) {
-                            continue;
-                        }
-                        let prospective_tunnel = match dir_2 {
-                            Dir::Up => Coord {
-                                x: self.walker.x,
-                                y: self.walker.y - 1,
-                            },
-                            Dir::Down => Coord {
-                                x: self.walker.x,
-                                y: self.walker.y + 1,
-                            },
-                            Dir::Right => Coord {
-                                x: self.walker.x + 1,
-                                y: self.walker.y,
-                            },
-                            Dir::Left => Coord {
-                                x: self.walker.x - 1,
-                                y: self.walker.y,
-                            },
-                        };
-                        if maze.map[prospective_tunnel.flatten(maze.size)] == CellType::Tunnel {
-                            maze.map[self.walker.x + self.walker.y * maze.size.x] = CellType::Hall;
-                            self.walker = prospective_tunnel;
-                            self.depth -= 1;
-                        }
-                    }
-
                     break;
                 }
 
                 let dir = dirs.swap_remove(thread_rng().gen_range(0..dirs.len()));
-
-                // out of bounds
-                if !self.walker.is_valid(maze.size, dir) {
+                if !current_cell.is_valid(maze.size, dir) {
                     continue;
                 }
-
-                let new_square = match dir {
+                let next = match dir {
                     Dir::Up => Coord {
-                        x: self.walker.x,
-                        y: self.walker.y - 1,
+                        x: current_cell.x,
+                        y: current_cell.y - 1,
                     },
                     Dir::Down => Coord {
-                        x: self.walker.x,
-                        y: self.walker.y + 1,
+                        x: current_cell.x,
+                        y: current_cell.y + 1,
                     },
                     Dir::Right => Coord {
-                        x: self.walker.x + 1,
-                        y: self.walker.y,
+                        x: current_cell.x + 1,
+                        y: current_cell.y,
                     },
                     Dir::Left => Coord {
-                        x: self.walker.x - 1,
-                        y: self.walker.y,
+                        x: current_cell.x - 1,
+                        y: current_cell.y,
                     },
                 };
 
-                // is hall
-                match maze.map[new_square.x + new_square.y * maze.size.x] {
-                    CellType::Tunnel | CellType::Hall => {
-                        continue;
+                let next_i = next.flatten(maze.size);
+
+                if !maze.visited[next_i] {
+                    self.stack.push(current_cell);
+                    self.depth += 1;
+
+                    let current_i = current_cell.flatten(maze.size);
+                    match dir {
+                        Dir::Up => {
+                            maze.map[current_i].up = false;
+                            maze.map[next_i].down = false;
+                        }
+                        Dir::Down => {
+                            maze.map[current_i].down = false;
+                            maze.map[next_i].up = false;
+                        }
+                        Dir::Right => {
+                            maze.map[current_i].right = false;
+                            maze.map[next_i].left = false;
+                        }
+                        Dir::Left => {
+                            maze.map[current_i].left = false;
+                            maze.map[next_i].right = false;
+                        }
                     }
-                    _ => {}
+
+                    maze.visited[next.flatten(maze.size)] = true;
+                    self.stack.push(next);
+                    self.depth += 1;
+                    break;
+                } else {
+                    continue;
                 }
-
-                // breaks single layer wall
-                for d in DIRS {
-                    // if behind skip check
-                    if (dir.get_xy().0 == 1 && d.0 == -1)
-                        || (dir.get_xy().0 == -1 && d.0 == 1)
-                        || (dir.get_xy().1 == 1 && d.1 == -1)
-                        || (dir.get_xy().1 == -1 && d.1 == 1)
-                    {
-                        continue;
-                    } else if (new_square.x == 0 && d.0 == -1)
-                        || (new_square.x == maze.size.x - 1 && d.0 == 1)
-                        || (new_square.y == 0 && d.1 == -1)
-                        || (new_square.y == maze.size.y - 1 && d.1 == 1)
-                    {
-                        continue;
-                    } else if match maze.map[(new_square.x as isize + d.0) as usize
-                        + ((new_square.y as isize + d.1) as usize * maze.size.x)]
-                    {
-                        CellType::Tunnel | CellType::Hall => true,
-                        _ => false,
-                    } {
-                        continue 'walk;
-                    }
-                }
-
-                self.walker = new_square;
-                self.depth += 1;
-
-                break;
             }
 
-            if last_walker.x == self.walker.x && last_walker.y == self.walker.y {
+            if self.depth > self.max_depth {
+                self.max_depth = self.depth;
+                maze.end = current_cell;
+            }
+
+            if self.stack.len() == 0 {
                 maze.play = false;
             }
         }

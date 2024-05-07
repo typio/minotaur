@@ -1,4 +1,4 @@
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Coord {
     pub x: usize,
     pub y: usize,
@@ -20,10 +20,22 @@ impl Coord {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum CellType {
-    Wall,
-    Tunnel,
-    Hall,
+pub struct Cell {
+    pub up: bool,
+    pub down: bool,
+    pub left: bool,
+    pub right: bool,
+}
+
+impl Cell {
+    pub fn closed() -> Self {
+        Cell {
+            up: true,
+            down: true,
+            left: true,
+            right: true,
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq)]

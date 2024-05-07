@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 use minotaur::{
     maze_generator::{Maze, MazeGenerator, DFS},
     renderer::Renderer,
-    CellType, Coord,
+    Cell, Coord,
 };
 
 #[macroquad::main("Minotaur")]
@@ -11,23 +11,28 @@ async fn main() {
     let w = screen_width() as usize;
     let h = screen_height() as usize;
 
-    let s = 10;
+    let s = 25;
 
     let maze_size = Coord { x: w / s, y: h / s };
-
-    let mut maze_generator = DFS::new(maze_size);
+    let start = Coord {
+        x: 0,
+        y: maze_size.y / 2,
+    };
 
     let mut maze: Maze;
     maze = Maze {
         size: maze_size,
-        map: vec![CellType::Wall; maze_size.x * maze_size.y],
-        start: maze_generator.walker,
-        end: maze_generator.walker,
-
+        map: vec![Cell::closed(); maze_size.x * maze_size.y],
+        visited: vec![false; maze_size.x * maze_size.y],
+        walker: start,
+        start,
+        end: start,
         play: false,
     };
 
-    let mut renderer = Renderer::new(&maze);
+    let mut maze_generator = DFS::new(&maze);
+
+    let mut renderer = Renderer::new();
 
     loop {
         if get_keys_pressed().contains(&KeyCode::P) {
@@ -35,20 +40,21 @@ async fn main() {
         }
 
         if get_keys_pressed().contains(&KeyCode::R) {
-            maze_generator = DFS::new(maze_size);
+            maze_generator = DFS::new(&maze);
 
             maze = Maze {
                 size: maze_size,
-                map: vec![CellType::Wall; maze_size.x * maze_size.y],
-                start: maze_generator.walker,
-                end: maze_generator.walker,
-
+                map: vec![Cell::closed(); maze_size.x * maze_size.y],
+                visited: vec![false; maze_size.x * maze_size.y],
+                walker: start,
+                start,
+                end: start,
                 play: false,
             };
         }
 
         if maze.play {
-            maze_generator.step(&mut maze, 4);
+            maze_generator.step(&mut maze, 1);
         }
 
         renderer.draw(&maze);
