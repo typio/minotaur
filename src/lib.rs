@@ -1,4 +1,5 @@
-pub mod maze_generator;
+pub mod disjoint_set;
+pub mod generator;
 pub mod renderer;
 pub mod types;
 

@@ -36,9 +36,17 @@ impl Cell {
             right: true,
         }
     }
+    pub fn open() -> Self {
+        Cell {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+        }
+    }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Dir {
     Up,
     Down,

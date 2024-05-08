@@ -1,4 +1,4 @@
-use crate::maze_generator::Maze;
+use crate::generator::Maze;
 use macroquad::prelude::*;
 
 pub struct Renderer {

@@ -1,9 +1,9 @@
 use macroquad::prelude::*;
 
 use minotaur::{
-    maze_generator::{Maze, MazeGenerator, DFS},
+    generator::{dfs::DFS, kruskal::Kruskal, Generator, Maze},
     renderer::Renderer,
-    Cell, Coord,
+    Coord,
 };
 
 #[macroquad::main("Minotaur")]
@@ -14,23 +14,10 @@ async fn main() {
     let s = 25;
 
     let maze_size = Coord { x: w / s, y: h / s };
-    let start = Coord {
-        x: 0,
-        y: maze_size.y / 2,
-    };
 
-    let mut maze: Maze;
-    maze = Maze {
-        size: maze_size,
-        map: vec![Cell::closed(); maze_size.x * maze_size.y],
-        visited: vec![false; maze_size.x * maze_size.y],
-        walker: start,
-        start,
-        end: start,
-        play: false,
-    };
+    let mut maze = Maze::new(maze_size);
 
-    let mut maze_generator = DFS::new(&maze);
+    let mut generator = Kruskal::new(&mut maze);
 
     let mut renderer = Renderer::new();
 
@@ -40,21 +27,12 @@ async fn main() {
         }
 
         if get_keys_pressed().contains(&KeyCode::R) {
-            maze_generator = DFS::new(&maze);
-
-            maze = Maze {
-                size: maze_size,
-                map: vec![Cell::closed(); maze_size.x * maze_size.y],
-                visited: vec![false; maze_size.x * maze_size.y],
-                walker: start,
-                start,
-                end: start,
-                play: false,
-            };
+            maze = Maze::new(maze_size);
+            generator = Kruskal::new(&mut maze);
         }
 
         if maze.play {
-            maze_generator.step(&mut maze, 1);
+            generator.step(&mut maze, 4);
         }
 
         renderer.draw(&maze);

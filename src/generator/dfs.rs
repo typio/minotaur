@@ -1,21 +1,8 @@
-use crate::{Cell, Coord, Dir};
+use crate::{
+    generator::{Generator, Maze},
+    Coord, Dir,
+};
 use rand::{thread_rng, Rng};
-
-pub trait MazeGenerator {
-    fn new(maze: &Maze) -> Self;
-    fn step(&mut self, maze: &mut Maze, speed: usize);
-}
-
-pub struct Maze {
-    pub size: Coord,
-    pub map: Vec<Cell>,
-    pub visited: Vec<bool>,
-    pub walker: Coord,
-    pub start: Coord,
-    pub end: Coord,
-
-    pub play: bool,
-}
 
 pub struct DFS {
     pub depth: usize,
@@ -23,8 +10,8 @@ pub struct DFS {
     pub stack: Vec<Coord>,
 }
 
-impl MazeGenerator for DFS {
-    fn new(maze: &Maze) -> Self {
+impl Generator for DFS {
+    fn new(maze: &mut Maze) -> Self {
         DFS {
             depth: 1,
             max_depth: 1,
