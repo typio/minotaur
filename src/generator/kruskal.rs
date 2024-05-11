@@ -1,6 +1,7 @@
 use crate::disjoint_set::DisjointSet;
-use crate::generator::{Generator, Maze};
-use crate::Coord;
+use crate::generator::Generator;
+use crate::maze::{Maze, MazeState};
+use crate::Point;
 use macroquad::rand::ChooseRandom;
 
 enum WallDir {
@@ -9,7 +10,7 @@ enum WallDir {
 }
 
 struct Wall {
-    pos: Coord,
+    pos: Point,
     dir: WallDir,
 }
 
@@ -20,15 +21,10 @@ pub struct Kruskal {
 
 impl Generator for Kruskal {
     fn new(maze: &mut Maze) -> Self {
-        maze.end = Coord {
-            x: maze.size.x - 1,
-            y: maze.size.y / 2,
-        };
-
         let mut walls = Vec::new();
         for y in 0..maze.size.y {
             for x in 0..maze.size.x {
-                let pos = Coord { x, y };
+                let pos = Point { x, y };
                 if x < maze.size.x - 1 {
                     walls.push(Wall {
                         pos,
@@ -62,7 +58,7 @@ impl Generator for Kruskal {
                 let (c1, c2) = match wall.dir {
                     WallDir::Down => (
                         wall.pos.flatten(maze.size),
-                        Coord {
+                        Point {
                             x: wall.pos.x,
                             y: wall.pos.y + 1,
                         }
@@ -70,7 +66,7 @@ impl Generator for Kruskal {
                     ),
                     WallDir::Right => (
                         wall.pos.flatten(maze.size),
-                        Coord {
+                        Point {
                             x: wall.pos.x + 1,
                             y: wall.pos.y,
                         }
@@ -82,27 +78,30 @@ impl Generator for Kruskal {
                     self.disjoint_set.union(c1, c2);
                     match wall.dir {
                         WallDir::Down => {
-                            maze.map[wall.pos.flatten(maze.size)].down = false;
-                            maze.map[Coord {
+                            maze.map[wall.pos.flatten(maze.size)].walls.down = false;
+                            maze.map[Point {
                                 x: wall.pos.x,
                                 y: wall.pos.y + 1,
                             }
                             .flatten(maze.size)]
+                            .walls
                             .up = false;
                         }
                         WallDir::Right => {
-                            maze.map[wall.pos.flatten(maze.size)].right = false;
-                            maze.map[Coord {
+                            maze.map[wall.pos.flatten(maze.size)].walls.right = false;
+                            maze.map[Point {
                                 x: wall.pos.x + 1,
                                 y: wall.pos.y,
                             }
                             .flatten(maze.size)]
+                            .walls
                             .left = false;
                         }
                     }
                 }
             } else {
-                maze.play = false;
+                maze.state = MazeState::Generated;
+                // maze.play = false;
                 break;
             }
         }
