@@ -14,3 +14,11 @@ A simple algorithm, which works by adding an adjacent unvisited cell to a stack,
 <img src="https://github.com/typio/minotaur/assets/26017543/5d3ba354-a6a9-4aee-877e-e2be4fa53fc8" width="720"  />
 </br></br>
 This algorithm works by initializing every cell in a unique (mathmatical) set, then on every iteration it picks a random wall in the maze and if the cells on either side of it are in different set, it merges the sets and removes the wall. Essentially this algorithm removes walls with a random sampling until each cell is connected to any other cell by some path.
+</br></br>
+
+## Solving
+### Breadth-First Search
+<img src="https://github.com/typio/minotaur/assets/26017543/3864fcd8-7570-43bf-9624-7d490e90758f" width="720"  />
+</br></br>
+Uses a queue data structure, initially containing the starting cell. On every iteration it pops an element off of the end of the queue and adds all its explorable but unvisited neighbors to the start of the queue. It also maintains a record of the previously explored "parent" cell for each cell so that when the target cell is encountered, we can backtrack through these parents to form the solution.
+</br></br>
